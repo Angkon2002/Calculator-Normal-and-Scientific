@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Scientific Calculator</title>
+  <style>
+    :root{--bg:#0f1724;--card:#111827;--accent:#06b6d4;--muted:#9ca3af;--glass:rgba(255,255,255,0.04)}
+    *{box-sizing:border-box;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial}
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,#071226 0%, #0b1220 100%);color:#e6eef6}
+    .wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+    .card{width:420px;background:var(--card);border-radius:14px;padding:18px;box-shadow:0 10px 30px rgba(2,6,23,0.6)}
+    .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+    h1{font-size:16px;margin:0}
+    .meta{font-size:12px;color:var(--muted)}
+    .screen{background:var(--glass);padding:12px;border-radius:10px;display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+    .display{height:48px;background:transparent;border:none;color:#fff;font-size:22px;text-align:right;padding-right:8px}
+    .result{height:28px;background:transparent;border:none;color:var(--accent);font-size:14px;text-align:right;padding-right:8px}
+    .pad{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+    button{padding:10px;border-radius:8px;border:none;background:transparent;color:#e6eef6;font-size:14px;cursor:pointer}
+    button:hover{background:rgba(255,255,255,0.02)}
+    .btn-op{background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);border:1px solid rgba(255,255,255,0.03)}
+    .wide{grid-column:span 2}
+    .accent{background:linear-gradient(90deg,#06b6d4,#3b82f6);color:#041025;font-weight:600}
+    .footer{margin-top:10px;font-size:12px;color:var(--muted);display:flex;justify-content:flex-end}
+    .small{font-size:12px;color:var(--muted)}
+    .switch{display:flex;gap:6px;align-items:center}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card" role="application" aria-label="scientific calculator">
+      <div class="top">
+        <div>
+          <h1>Scientific Calculator</h1>
+          <div class="meta">Precision functions • parentheses • history</div>
+        </div>
+        <div class="switch">
+          <label class="small">Deg</label>
+          <input id="degToggle" type="checkbox" aria-label="use degrees instead of radians" />
+        </div>
+      </div>
+
+      <div class="screen">
+        <input id="expr" class="display" type="text" inputmode="none" aria-label="expression" readonly />
+        <input id="res" class="result" type="text" aria-label="result" readonly />
+      </div>
+
+      <div class="pad" id="buttons">
+        <button class="btn-op" data-action="clear">C</button>
+        <button class="btn-op" data-action="back">⌫</button>
+        <button class="btn-op" data-insert="(">(</button>
+        <button class="btn-op" data-insert=")">)</button>
+        <button class="btn-op" data-insert="%">%</button>
+        <button class="btn-op" data-action="pi">π</button>
+
+        <button data-insert="7">7</button>
+        <button data-insert="8">8</button>
+        <button data-insert="9">9</button>
+        <button class="btn-op" data-insert="/">÷</button>
+        <button class="btn-op" data-insert="^">xʸ</button>
+        <button class="btn-op" data-action="sqrt">√</button>
+
+        <button data-insert="4">4</button>
+        <button data-insert="5">5</button>
+        <button data-insert="6">6</button>
+        <button class="btn-op" data-insert="*">×</button>
+        <button class="btn-op" data-action="fact">n!</button>
+        <button class="btn-op" data-action="recip">1/x</button>
+
+        <button data-insert="1">1</button>
+        <button data-insert="2">2</button>
+        <button data-insert="3">3</button>
+        <button class="btn-op" data-insert="-">−</button>
+        <button class="btn-op" data-action="pow2">x²</button>
+        <button class="btn-op" data-action="pow3">x³</button>
+
+        <button data-insert="0" class="wide">0</button>
+        <button data-insert=".">.</button>
+        <button class="btn-op" data-insert="+">+</button>
+        <button class="accent wide" data-action="equals">=</button>
+
+        <button class="btn-op" data-action="sin">sin</button>
+        <button class="btn-op" data-action="cos">cos</button>
+        <button class="btn-op" data-action="tan">tan</button>
+        <button class="btn-op" data-action="asin">asin</button>
+        <button class="btn-op" data-action="acos">acos</button>
+        <button class="btn-op" data-action="atan">atan</button>
+
+        <button class="btn-op" data-action="ln">ln</button>
+        <button class="btn-op" data-action="log">log</button>
+        <button class="btn-op" data-action="exp">eˣ</button>
+        <button class="btn-op" data-action="abs">|x|</button>
+        <button class="btn-op" data-action="ans">ANS</button>
+        <button class="btn-op" data-action="hist">HIST</button>
+      </div>
+
+      <div class="footer">
+        <div class="small">M. Abdullah Khan • angkonkhan206@gmail.com • Angkon2002</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      const exprEl = document.getElementById('expr');
+      const resEl = document.getElementById('res');
+      const degToggle = document.getElementById('degToggle');
+      let ans = '';
+      let history = [];
+
+      function insert(text){
+        exprEl.value += text;
+      }
+      function clearAll(){ exprEl.value=''; resEl.value=''; }
+      function back(){ exprEl.value = exprEl.value.slice(0,-1); }
+
+      function toRadians(x){ return x * Math.PI / 180; }
+      function fromRadians(x){ return x * 180 / Math.PI; }
+
+      function safeEval(input){
+        const replaced = input
+          .replace(/÷/g,'/')
+          .replace(/×/g,'*')
+          .replace(/\^/g,'**')
+          .replace(/π/g, String(Math.PI))
+          .replace(/%/g, '/100');
+
+        const context = {
+          sin: (v)=> Math.sin(degToggle.checked? toRadians(v) : v),
+          cos: (v)=> Math.cos(degToggle.checked? toRadians(v) : v),
+          tan: (v)=> Math.tan(degToggle.checked? toRadians(v) : v),
+          asin: (v)=> degToggle.checked? fromRadians(Math.asin(v)) : Math.asin(v),
+          acos: (v)=> degToggle.checked? fromRadians(Math.acos(v)) : Math.acos(v),
+          atan: (v)=> degToggle.checked? fromRadians(Math.atan(v)) : Math.atan(v),
+          sqrt: (v)=> Math.sqrt(v),
+          ln: (v)=> Math.log(v),
+          log: (v)=> Math.log10 ? Math.log10(v) : Math.log(v)/Math.LN10,
+          abs: (v)=> Math.abs(v),
+          exp: (v)=> Math.exp(v),
+          fact: (v)=> factFunc(v),
+          ANS: ()=> (ans === '' ? 0 : Number(ans)),
+        };
+
+        const sandboxKeys = Object.keys(context);
+        let expr = replaced;
+        sandboxKeys.forEach(k=>{
+          const re = new RegExp('\\b'+k+'\\b','g');
+          expr = expr.replace(re, `context.${k}`);
+        });
+
+        const fn = new Function('context','with(context){return ('+expr+') }');
+        return fn(context);
+      }
+
+      function factFunc(n){
+        n = Number(n);
+        if(!Number.isInteger(n) || n < 0) return NaN;
+        let r = 1;
+        for(let i=2;i<=n;i++) r*=i;
+        return r;
+      }
+
+      function calculate(){
+        if(!exprEl.value) return;
+        try{
+          const value = safeEval(exprEl.value);
+          ans = (Number.isFinite(value) ? Math.round(value * 1e12)/1e12 : value);
+          resEl.value = String(ans);
+          history.unshift({expr:exprEl.value, result:resEl.value});
+          if(history.length>10) history.pop();
+        }catch(e){
+          resEl.value = 'Error';
+        }
+      }
+
+      document.getElementById('buttons').addEventListener('click', e=>{
+        const t = e.target;
+        if(!t) return;
+        if(t.dataset.insert) insert(t.dataset.insert);
+        if(t.dataset.action){
+          const action = t.dataset.action;
+          if(action==='clear') clearAll();
+          else if(action==='back') back();
+          else if(action==='pi') insert('π');
+          else if(action==='sqrt') insert('sqrt(');
+          else if(action==='fact') insert('fact(');
+          else if(action==='recip') insert('(1/(');
+          else if(action==='pow2') insert('**2');
+          else if(action==='pow3') insert('**3');
+          else if(action==='sin') insert('sin(');
+          else if(action==='cos') insert('cos(');
+          else if(action==='tan') insert('tan(');
+          else if(action==='asin') insert('asin(');
+          else if(action==='acos') insert('acos(');
+          else if(action==='atan') insert('atan(');
+          else if(action==='ln') insert('ln(');
+          else if(action==='log') insert('log(');
+          else if(action==='exp') insert('exp(');
+          else if(action==='abs') insert('abs(');
+          else if(action==='ans') insert('ANS()');
+          else if(action==='hist') alert(history.map(h=>h.expr+' = '+h.result).join('\n') || 'No history');
+          else if(action==='equals') calculate();
+        }
+      });
+
+      window.addEventListener('keydown', e=>{
+        if(e.key === 'Enter') { calculate(); e.preventDefault(); }
+        else if(e.key === 'Backspace') { back(); }
+        else if(/[0-9\.\+\-\/\*\^\(\)%]/.test(e.key)) insert(e.key);
+      });
+
+      exprEl.value=''; resEl.value='';
+    })();
+  </script>
+</body>
+</html>
