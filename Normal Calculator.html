@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Simple Calculator</title>
+  <style>
+    :root{--bg:#0f1724;--panel:#0b1220;--accent:#10b981;--muted:#94a3b8;--btn:#111827}
+    *{box-sizing:border-box}
+    body{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#071029 0%, #041022 100%);font-family:Inter,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial;color:#e6eef6;margin:0}
+    .calculator{width:340px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);border-radius:16px;padding:18px;box-shadow:0 10px 30px rgba(2,6,23,0.6);}
+    .display{height:72px;background:var(--panel);border-radius:10px;padding:10px 14px;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;color:var(--accent);font-weight:600;}
+    .display .expression{color:var(--muted);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%}
+    .display .result{font-size:26px;line-height:1;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%}
+    .keys{margin-top:14px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+    button.key{height:56px;border-radius:10px;border:0;background:linear-gradient(180deg,#0b1220,#0b1522);color:#dbeafe;font-size:18px;cursor:pointer;box-shadow:0 4px 8px rgba(2,6,23,0.5)}
+    button.key.operator{background:linear-gradient(180deg,#0b1320,#10232e);color:var(--accent)}
+    button.key.wide{grid-column:span 2}
+    button.key:active{transform:translateY(1px)}
+    .muted{color:var(--muted);font-size:13px;text-align:center;margin-top:10px}
+    @media (max-width:380px){.calculator{width:94vw}}
+  </style>
+</head>
+<body>
+  <div class="calculator" role="application" aria-label="Calculator">
+    <div class="display" id="display">
+      <div class="expression" id="expression">0</div>
+      <div class="result" id="result">0</div>
+    </div>
+
+    <div class="keys">
+      <button class="key" data-action="clear">C</button>
+      <button class="key" data-action="back">⌫</button>
+      <button class="key" data-action="paren">( )</button>
+      <button class="key operator" data-value="/">÷</button>
+
+      <button class="key" data-value="7">7</button>
+      <button class="key" data-value="8">8</button>
+      <button class="key" data-value="9">9</button>
+      <button class="key operator" data-value="*">×</button>
+
+      <button class="key" data-value="4">4</button>
+      <button class="key" data-value="5">5</button>
+      <button class="key" data-value="6">6</button>
+      <button class="key operator" data-value="-">−</button>
+
+      <button class="key" data-value="1">1</button>
+      <button class="key" data-value="2">2</button>
+      <button class="key" data-value="3">3</button>
+      <button class="key operator" data-value="+">+</button>
+
+      <button class="key" data-value="0" class="wide">0</button>
+      <button class="key" data-value=".">.</button>
+      <button class="key operator" data-action="equals">=</button>
+    </div>
+
+    <div class="muted">Tip: use keyboard numbers, + - * / and Enter for =</div>
+  </div>
+
+  <script>
+    (function(){
+      const exprEl = document.getElementById('expression');
+      const resultEl = document.getElementById('result');
+      const keys = document.querySelectorAll('button.key');
+      let expression = '';
+
+      function updateDisplay(){
+        exprEl.textContent = expression || '0';
+        try{
+          const safe = expression.replace(/[^0-9+\-*/(). ]/g, '');
+          if(safe.trim() === ''){ resultEl.textContent = '0'; return }
+          const value = Function('return ' + safe)();
+          resultEl.textContent = (value === undefined) ? '' : String(value);
+        }catch(e){ resultEl.textContent = '' }
+      }
+
+      function insert(str){
+        if(str === '.'){
+          const parts = expression.split(/[^0-9.]/);
+          const last = parts[parts.length-1] || '';
+          if(last.includes('.')) return;
+        }
+        expression += str;
+        updateDisplay();
+      }
+
+      function backspace(){ expression = expression.slice(0,-1); updateDisplay(); }
+      function clearAll(){ expression = ''; updateDisplay(); }
+
+      function toggleParen(){
+        const open = (expression.match(/\(/g)||[]).length;
+        const close = (expression.match(/\)/g)||[]).length;
+        if(open === close) expression += '('; else expression += ')';
+        updateDisplay();
+      }
+
+      function calculate(){
+        try{
+          const safe = expression.replace(/[^0-9+\-*/(). ]/g, '');
+          if(safe.trim() === '') return;
+          const value = Function('return ' + safe)();
+          expression = String(value);
+          updateDisplay();
+        }catch(e){
+          resultEl.textContent = 'Error';
+        }
+      }
+
+      keys.forEach(k=>{
+        k.addEventListener('click', ()=>{
+          const v = k.getAttribute('data-value');
+          const act = k.getAttribute('data-action');
+          if(act === 'clear') return clearAll();
+          if(act === 'back') return backspace();
+          if(act === 'paren') return toggleParen();
+          if(act === 'equals') return calculate();
+          if(v) insert(v);
+        });
+      });
+
+      window.addEventListener('keydown', (e)=>{
+        if(e.key >= '0' && e.key <= '9'){ insert(e.key); e.preventDefault(); return }
+        if(e.key === '.') { insert('.'); e.preventDefault(); return }
+        if(e.key === '+'||e.key === '-'||e.key === '*'||e.key === '/') { insert(e.key); e.preventDefault(); return }
+        if(e.key === 'Enter') { calculate(); e.preventDefault(); return }
+        if(e.key === 'Backspace') { backspace(); e.preventDefault(); return }
+        if(e.key === 'Escape') { clearAll(); e.preventDefault(); return }
+        if(e.key === '(' || e.key === ')') { insert(e.key); e.preventDefault(); return }
+      });
+
+      updateDisplay();
+    })();
+  </script>
+</body>
+</html>
